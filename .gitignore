@@ -1,0 +1,23 @@
+# Node modules & dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Vercel & Build outputs
+.vercel/
+.next/
+dist/
+out/
+
+# Environment variables (Sangat penting agar API Key tidak bocor!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs & OS System files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
