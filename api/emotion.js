@@ -1,54 +1,39 @@
-import { GoogleGenAI } from '@google/genai';
-
-/**
- * Vercel Serverless Function - Gemini Emotion API Gateway for ESP32
- * 
- * @param {import('@vercel/node').VercelRequest} req 
- * @param {import('@vercel/node').VercelResponse} res 
- */
 export default async function handler(req, res) {
-  // Hanya izinkan method GET
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    console.error('[ERROR] GEMINI_API_KEY is not defined in environment variables.');
-    return res.status(500).json({ display_text: '[MOOD: ERROR] Config API Key Hilang!' });
+    return res.status(200).json({ display_text: '[MOOD: ERROR] API Key Belum Dipasang!' });
   }
 
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  const promptText = `Kamu adalah jam LED P10 beremosi manusia (Bahagia, Marah, Sarkas, Mager, Puitis). 
+  Pilih 1 emosi acak, buat 1 celetukan santai visual maks 12 kata untuk running text P10. 
+  Format wajib: [MOOD: NAMA_EMOSI] Kalimatmu. Jangan pakai tanda petik.`;
+
   try {
-    const ai = new GoogleGenAI({ apiKey });
-
-    const promptText = `Kamu adalah jam LED P10 beremosi manusia (Bahagia, Marah, Sarkas, Mager, Puitis). 
-    Pilih 1 emosi acak, buat 1 celetukan santai visual maks 12 kata untuk running text P10. 
-    Format wajib: [MOOD: NAMA_EMOSI] Kalimatmu. Jangan pakai tanda petik.`;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: promptText,
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: promptText }] }]
+      })
     });
 
-    const resultText = response.text?.trim() || '[MOOD: NORMAL] Semangat jalani hari ini!';
+    const data = await response.json();
 
-    // Set CORS & Content-Type Headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    if (data.error) {
+      console.error('Gemini API Error:', data.error);
+      return res.status(200).json({ display_text: '[MOOD: ERROR] API Key Salah/Limit' });
+    }
+
+    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[MOOD: NORMAL] Semangat hari ini!';
+
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 's-maxage=0, max-age=0, no-cache, no-store');
-
-    return res.status(200).json({ 
-      status: 'success',
-      display_text: resultText 
-    });
+    return res.status(200).json({ display_text: resultText.trim() });
 
   } catch (error) {
-    console.error('[GEMINI API ERROR]:', error.message || error);
-    
-    return res.status(500).json({ 
-      status: 'error',
-      display_text: '[MOOD: SICK] Server Gemini Sedang Pusing...' 
-    });
+    console.error('Fetch Error:', error);
+    return res.status(200).json({ display_text: '[MOOD: SICK] Server Vercel Error' });
   }
 }
