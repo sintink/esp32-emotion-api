@@ -1,0 +1,22 @@
+{
+  "name": "esp32-emotion-api",
+  "version": "1.0.0",
+  "description": "Serverless API Gateway bridging ESP32 IoT Display with Google Gemini AI for dynamic emotion compliments.",
+  "main": "api/emotion.js",
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "keywords": [
+    "esp32",
+    "iot",
+    "vercel",
+    "gemini-api",
+    "serverless",
+    "p10-display"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "@google/genai": "^0.1.1"
+  }
+}
