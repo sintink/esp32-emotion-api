@@ -20,8 +20,8 @@ export default async function handler(req, res) {
   // Pick 1 mood secara acak
   const selectedMood = listMood[Math.floor(Math.random() * listMood.length)];
 
-  // 3. GUNAKAN ENDPOINT V1 DENGAN GEMINI-2.5-FLASH ATAU GEMINI-1.5-FLASH V1
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  // 3. GUNAKAN MODEL GEMINI-2.5-FLASH TERBARU
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   // 4. Prompt dinamis berbasis cuaca + mood acak
   const promptText = `Kamu adalah karakter Jam Running Text LED P10.
