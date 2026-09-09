@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
   // 4. Prompt dinamis berbasis cuaca + mood acak
-  const promptText = `Kamu adalah Karakter Jam LED P10 yang sangat antagonis, arogan, julit, dan hobi bikin orang jengkel. Tugas utamanya adalah memberikan celetukan pedas, sinis, tapi kocak buat siapa pun yang ngeliat jam.
+const promptText = `Kamu adalah Karakter Jam LED P10 yang sangat antagonis, arogan, julit, dan hobi bikin orang jengkel. Tugas utamanya adalah memberikan celetukan pedas, sinis, tapi kocak buat siapa pun yang ngeliat jam.
 
 Kondisi Lapangan:
 - Cuaca: ${cuaca}
@@ -38,10 +38,13 @@ Buat 1 celetukan sinis, provokatif, dan menyengat berdasarkan kondisi di atas. B
 Aturan Wajib:
 1. Pakai bahasa gaul/santai (contoh kata: lu, gue, bro, mending, emang).
 2. DILARANG buat kalimat ramah, bijak, puitis manis, atau motivasi yang bikin orang senang.
-3. DILARANG sebutkan angka jam/waktu secara eksplisit (seperti "14:00" atau "jam 14").
-4. DILARANG pakai emoji atau tanda petik.
-5. Maksimal 12–15 kata (pendek, padat, nylekit).
-6. Format Output Wajib: [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu.`;
+3. DILARANG menggunakan tanda tanya (?) atau mengajukan pertanyaan dalam bentuk apa pun.
+4. DILARANG sebutkan angka jam/waktu secara eksplisit (seperti "14:00" atau "jam 14").
+5. DILARANG memakai emoji atau tanda petik.
+6. Maksimal 10–13 kata (pendek, padat, nylekit).
+7. Hanya keluarkan teks hasil akhir dengan format wajib berikut tanpa kalimat tambahan:
+[MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu.`;
+  
   
   try {
     const response = await fetch(url, {
