@@ -37,35 +37,43 @@ Aturan Wajib:
 7. Format wajib hasil akhir tanpa kalimat tambahan:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu.`;
 
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        // Model gratis yang sangat pintar & kencang
-       // model: "meta-llama/llama-3.3-70b-instruct:free",
-        model: "qwen/qwen-2.5-72b-instruct:free",
-        messages: [{ role: "user", content: promptText }]
-      })
-    });
+  // Daftar model gratis cadangan
+  const freeModels = [
+    "google/gemini-2.0-flash-exp:free",
+    "deepseek/deepseek-r1:free",
+    "meta-llama/llama-3.1-8b-instruct:free"
+  ];
 
-    const data = await response.json();
+  for (const modelSlug of freeModels) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://vercel.com",
+          "X-Title": "ESP32 P10 Clock",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: modelSlug,
+          messages: [{ role: "user", content: promptText }]
+        })
+      });
 
-    if (data.error) {
-      console.error('OpenRouter Error:', data.error);
-      return res.status(200).json({ display_text: '[MOOD: ERROR] OpenRouter Limit/Error' });
+      const data = await response.json();
+
+      if (!data.error && data.choices?.[0]?.message?.content) {
+        const resultText = data.choices[0].message.content.trim();
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).json({ display_text: resultText });
+      } else {
+        console.warn(`Model ${modelSlug} gagal/error:`, data.error?.message || 'No content');
+      }
+    } catch (err) {
+      console.error(`Fetch error untuk model ${modelSlug}:`, err);
     }
-
-    const resultText = data.choices?.[0]?.message?.content || '[MOOD: NORMAL] Mending jalan daripada ngeliatin gue.';
-
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({ display_text: resultText.trim() });
-
-  } catch (error) {
-    console.error('Fetch Error:', error);
-    return res.status(200).json({ display_text: '[MOOD: SICK] Server Vercel Error' });
   }
+
+  // Jika semua model gratis di atas gagal
+  return res.status(200).json({ display_text: '[MOOD: MINGGAT] Semua AI Gratisan Offline' });
 }
