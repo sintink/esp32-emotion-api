@@ -5,26 +5,25 @@ export default async function handler(req, res) {
     return res.status(200).json({ display_text: '[MOOD: ERROR] API Key Belum Dipasang!' });
   }
 
-  // 1. Tangkap parameter dari ESP32 (URL: /api/emotion?cuaca=Hujan&suhu=24&jam=14)
+  // 1. Tangkap parameter dari ESP32
   const cuaca = req.query.cuaca || 'Cerah';
   const suhu = req.query.suhu || '30';
   const jam = req.query.jam || '12';
 
-  // 2. Daftar 12 Mood Pilihan (Termasuk Sindiran)
+  // 2. Daftar 12 Mood Pilihan
   const listMood = [
     'Sarkas', 'Sindiran', 'Mager', 'Semangat', 
     'Puitis', 'Humor', 'Perhatian', 'Nostalgia', 
     'Filsuf', 'Drama', 'Santai', 'Heran'
   ];
 
-  // Pick 1 mood secara acak
   const selectedMood = listMood[Math.floor(Math.random() * listMood.length)];
 
-  // 3. GUNAKAN MODEL GEMINI-2.5-FLASH TERBARU
+  // 3. Gunakan model Gemini 2.5 Flash
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
-  // 4. Prompt dinamis berbasis cuaca + mood acak
-const promptText = `Kamu adalah Karakter Jam LED P10 yang sangat antagonis, arogan, julit, dan hobi bikin orang jengkel. Tugas utamanya adalah memberikan celetukan pedas, sinis, tapi kocak buat siapa pun yang ngeliat jam.
+  // 4. Prompt dinamis
+  const promptText = `Kamu adalah Karakter Jam LED P10 yang sangat antagonis, arogan, julit, dan hobi bikin orang jengkel. Tugas utamanya adalah memberikan celetukan pedas, sinis, tapi kocak buat siapa pun yang ngeliat jam.
 
 Kondisi Lapangan:
 - Cuaca: ${cuaca}
@@ -44,25 +43,47 @@ Aturan Wajib:
 6. Maksimal 10–13 kata (pendek, padat, nylekit).
 7. Hanya keluarkan teks hasil akhir dengan format wajib berikut tanpa kalimat tambahan:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu.`;
-  
-  
+
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }]
+        contents: [{ parts: [{ text: promptText }] }],
+        // Tambahkan Safety Settings agar prompt sinis/sarkas tidak terblokir filter Gemini
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" }
+        ]
       })
     });
 
     const data = await response.json();
 
+    // Cek error dari Google
     if (data.error) {
-      console.error('Gemini API Error:', data.error);
-      return res.status(200).json({ display_text: '[MOOD: ERROR] API Key Salah/Limit' });
+      console.error('Gemini API Error Detail:', JSON.stringify(data.error));
+      // Tampilkan pesan error beserta kodenya agar mudah di-debug
+      return res.status(200).json({ 
+        display_text: `[MOOD: ERROR] Code ${data.error.code}: ${data.error.status}` 
+      });
     }
 
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text || '[MOOD: NORMAL] Semangat hari ini!';
+    // Ambil teks dari response Gemini (menangani struktur output Gemini)
+    const candidate = data.candidates?.[0];
+    let resultText = '';
+
+    if (candidate?.content?.parts) {
+      // Cari part yang berisi teks respons
+      const textPart = candidate.content.parts.find(p => p.text);
+      if (textPart) {
+        resultText = textPart.text;
+      }
+    }
+
+    if (!resultText) {
+      resultText = `[MOOD: ${selectedMood.toUpperCase()}] Mending lu jalan daripada ngeliatin gue terus.`;
+    }
 
     res.setHeader('Content-Type', 'application/json');
     return res.status(200).json({ display_text: resultText.trim() });
