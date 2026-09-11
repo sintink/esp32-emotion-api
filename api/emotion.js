@@ -37,12 +37,12 @@ Aturan Wajib:
 7. Format wajib hasil akhir tanpa kalimat tambahan:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu.`;
 
-  // Daftar slug model gratis OpenRouter yang valid
+  // Daftar slug: Pertama coba Router Otomatis, lalu fallback ke model spesifik yang aktif
   const freeModels = [
-    "deepseek/deepseek-chat:free",
-    "google/gemini-2.0-flash-lite-preview-02-05:free",
-    "qwen/qwen-2.5-coder-32b-instruct:free",
-    "meta-llama/llama-3.2-11b-vision-instruct:free"
+    "openrouter/free",
+    "google/gemma-4-31b-it:free",
+    "nvidia/nemotron-3-nano-30b-a3b:free",
+    "poolside/laguna-xs-2.1:free"
   ];
 
   for (const modelSlug of freeModels) {
@@ -68,12 +68,12 @@ Aturan Wajib:
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({ display_text: resultText });
       } else {
-        console.warn(`[FAIL] Model ${modelSlug}:`, data.error?.message || 'Empty response');
+        console.warn(`[FAIL] Model ${modelSlug}:`, data.error?.message || JSON.stringify(data));
       }
     } catch (err) {
       console.error(`[ERROR] Fetch ${modelSlug}:`, err.message);
     }
   }
 
-  return res.status(200).json({ display_text: '[MOOD: MINGGAT] AI Gratisan Off' });
-}
+  return res.status(200).json({ display_text: '[MOOD: MINGGAT] Semua AI Gratisan Offline' });
+        }
