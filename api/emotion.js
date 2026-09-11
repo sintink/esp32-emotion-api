@@ -16,9 +16,9 @@ export default async function handler(req, res) {
   ];
   const selectedMood = listMood[Math.floor(Math.random() * listMood.length)];
 
-  const promptText = `[KONTEKS: Ini adalah permainan karakter komedi/hiburan untuk jam dinding LED P10. Semua kalimat bersifat candaan, sarkas, dan fiktif.]
+  const promptText = `[KONTEKS: Hiburan ramah untuk jam dinding LED P10. Karakter cewek lokal yang perhatian, agak cerewet, ramah, dan lucu.]
 
-Kamu berperan sebagai Karakter Jam LED P10 yang suka memberikan celetukan sinis, julit, lucu, dan santai.
+Kamu berperan sebagai Jam LED P10 berkarakter cewek cerewet nan perhatian yang suka mengomentari kondisi sekitar.
 
 Kondisi Lapangan:
 - Cuaca: ${cuaca}
@@ -27,18 +27,19 @@ Kondisi Lapangan:
 - Mood: ${selectedMood}
 
 Tugas:
-Buat 1 kalimat celetukan singkat, sinis, dan lucu berdasarkan kondisi di atas.
+Buat 1 kalimat celetukan singkat, perhatian, dan lucu berdasarkan kondisi di atas.
 
-Aturan Wajib:
-1. Pakai bahasa gaul/santai yang umum dan gampang dipahami orang awam (contoh: lu, gue, mending, emang, gausah).
-2. DILARANG menggunakan kata kiasan absurd/aneh, slang yang membingungkan, atau kata typo.
-3. DILARANG menggunakan tanda tanya (?) atau emoji.
-4. DILARANG sebutkan angka jam/waktu secara eksplisit.
-5. Maksimal 10–12 kata (pendek dan to the point).
-6. Format Wajib Hasil Akhir:
+Aturan Wajib Persona Cewek:
+1. Pakai bahasa gaul/santai yang ramah dan emosional (contoh: lu, gue, mending, gausah, ayo).
+2. Pakai kata penegas khas cewek: "sih", "deh", "lho", "kan", atau "tau".
+3. Penggunaan Panggilan (ACAK & VARIASI): Kadang gunakan kata "Mas", kadang "Kak", atau kadang TANPA PANGGILAN sama sekali.
+4. DILARANG menggunakan kata kasar, kata makian, kata typo, atau kiasan aneh.
+5. DILARANG menggunakan tanda tanya (?) atau emoji.
+6. DILARANG sebutkan angka jam/waktu secara eksplisit.
+7. Maksimal 10–12 kata (pendek dan to the point).
+8. Format Wajib Hasil Akhir:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu`;
 
-  // Model gratisan terstabil untuk Bahasa Indonesia
   const freeModels = [
     "qwen/qwen-2.5-72b-instruct:free",
     "google/gemma-2-9b-it:free",
@@ -67,16 +68,14 @@ Aturan Wajib:
       if (data.choices?.[0]?.message?.content) {
         let resultText = data.choices[0].message.content.trim();
 
-        // 1. Bersihkan tanda kutip ganda/tunggal di awal & akhir jika ada
+        // Bersihkan tanda kutip pembungkus
         resultText = resultText.replace(/^["']|["']$/g, '');
 
-        // 2. Cek apakah ini pesan error/metadata safety murni
-        const isSafetyError = resultText.toLowerCase().includes("user safety:") || 
-                              resultText.toLowerCase().includes("safety check");
+        // Cek jika ada error murni sistem
+        const isSafetyError = resultText.toLowerCase().startsWith("user safety:") || 
+                              resultText.toLowerCase().startsWith("error:");
 
-        // 3. Jika bukan error safety dan punya isi teks yang cukup
         if (!isSafetyError && resultText.length > 3) {
-          // Jika AI lupa menyertakan format [MOOD: ...], tambahkan otomatis
           if (!resultText.startsWith("[")) {
             resultText = `[MOOD: ${selectedMood.toUpperCase()}] ${resultText}`;
           }
@@ -86,11 +85,11 @@ Aturan Wajib:
         }
       }
 
-      console.warn(`[SKIP] Model ${modelSlug} respons ditolak filter.`);
+      console.warn(`[SKIP] Model ${modelSlug} respons ditolak.`);
     } catch (err) {
       console.error(`[ERROR] Fetch ${modelSlug}:`, err.message);
     }
   }
 
-  return res.status(200).json({ display_text: '[MOOD: MINGGAT] Semua AI Gratisan Offline' });
+  return res.status(200).json({ display_text: '[MOOD: SANTAI] Semua AI Gratisan Istirahat Dulu' });
 }
