@@ -34,17 +34,16 @@ Aturan Wajib:
 2. DILARANG menggunakan kata kiasan absurd/aneh, slang yang membingungkan, atau kata typo.
 3. DILARANG menggunakan tanda tanya (?) atau emoji.
 4. DILARANG sebutkan angka jam/waktu secara eksplisit.
-5. Maksimal 10–12 kata (pendek dan to the point).
+5. Maksimal 12–15 kata (pendek dan to the point).
 6. Format Wajib Hasil Akhir:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu`;
-  
-  
-  // Daftar slug: Pertama coba Router Otomatis, lalu fallback ke model spesifik yang aktif
+
+  // Model gratisan yang stabil dan lancar Bahasa Indonesia
   const freeModels = [
-    "openrouter/free",
-    "google/gemma-4-31b-it:free",
-    "nvidia/nemotron-3-nano-30b-a3b:free",
-    "poolside/laguna-xs-2.1:free"
+    "qwen/qwen-2.5-72b-instruct:free",
+    "google/gemma-2-9b-it:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
+    "openrouter/free"
   ];
 
   for (const modelSlug of freeModels) {
@@ -66,16 +65,27 @@ Aturan Wajib:
       const data = await response.json();
 
       if (data.choices?.[0]?.message?.content) {
-        const resultText = data.choices[0].message.content.trim();
-        res.setHeader('Content-Type', 'application/json');
-        return res.status(200).json({ display_text: resultText });
-      } else {
-        console.warn(`[FAIL] Model ${modelSlug}:`, data.error?.message || JSON.stringify(data));
+        let resultText = data.choices[0].message.content.trim();
+
+        // Hapus teks status safety jika terselip
+        resultText = resultText.replace(/user safety:\s*safe/gi, '').trim();
+
+        // Validasi: Pastikan hasil murni teks celetukan
+        if (
+          resultText.length > 8 && 
+          !resultText.toLowerCase().includes("user safety") &&
+          !resultText.toLowerCase().includes("safety:")
+        ) {
+          res.setHeader('Content-Type', 'application/json');
+          return res.status(200).json({ display_text: resultText });
+        }
       }
+
+      console.warn(`[SKIP] Model ${modelSlug} respons tidak valid.`);
     } catch (err) {
       console.error(`[ERROR] Fetch ${modelSlug}:`, err.message);
     }
   }
 
   return res.status(200).json({ display_text: '[MOOD: MINGGAT] Semua AI Gratisan Offline' });
-        }
+    }
