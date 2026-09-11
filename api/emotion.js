@@ -30,9 +30,9 @@ Tugas:
 Buat 1 kalimat celetukan singkat, perhatian, dan lucu berdasarkan kondisi di atas.
 
 Aturan Wajib Persona Cewek:
-1. Pakai bahasa gaul/santai yang ramah dan emosional (contoh: lu, gue, mending, gausah, ayo).
+1. Pakai bahasa gaul/santai yang ramah dan emosional (contoh: mending, gausah, ayo).
 2. Pakai kata penegas khas cewek: "sih", "deh", "lho", "kan", atau "tau".
-3. Penggunaan Panggilan (ACAK & VARIASI): Kadang gunakan kata "Mas", kadang "Kak", atau kadang TANPA PANGGILAN sama sekali.
+3. Penggunaan Panggilan (ACAK & VARIASI): Kadang gunakan kata "Mas", kadang "Kak", atau kadang TANPA PANGGULAN sama sekali.
 4. DILARANG menggunakan kata kasar, kata makian, kata typo, atau kiasan aneh.
 5. DILARANG menggunakan tanda tanya (?) atau emoji.
 6. DILARANG sebutkan angka jam/waktu secara eksplisit.
@@ -41,10 +41,10 @@ Aturan Wajib Persona Cewek:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu`;
 
   const freeModels = [
-    "qwen/qwen-2.5-72b-instruct:free",
-    "google/gemma-2-9b-it:free",
-    "meta-llama/llama-3.1-8b-instruct:free",
-    "openrouter/free"
+    "qwen/qwen-2.5-72b-instruct",
+    "google/gemma-2-9b-it",
+    "meta-llama/llama-3.1-8b-instruct",
+    "mistralai/mistral-7b-instruct:free"
   ];
 
   for (const modelSlug of freeModels) {
@@ -52,30 +52,30 @@ Aturan Wajib Persona Cewek:
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://vercel.com",
-          "X-Title": "ESP32 P10 Clock",
+          "Authorization": `Bearer ${apiKey.trim()}`,
+          "HTTP-Referer": "https://esp32-emotion-api.vercel.app",
+          "X-Title": "ESP32 Clock System",
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
           model: modelSlug,
-          messages: [{ role: "user", content: promptText }]
+          messages: [{ role: "user", content: promptText }],
+          max_tokens: 60
         })
       });
 
       const data = await response.json();
 
+      if (data.error) {
+        console.error(`[API ERROR] ${modelSlug}:`, JSON.stringify(data.error));
+        continue;
+      }
+
       if (data.choices?.[0]?.message?.content) {
         let resultText = data.choices[0].message.content.trim();
+        resultText = resultText.replace(/^["']|["']$/g, '').replace(/\r?\n|\r/g, ' ');
 
-        // Bersihkan tanda kutip pembungkus
-        resultText = resultText.replace(/^["']|["']$/g, '');
-
-        // Cek jika ada error murni sistem
-        const isSafetyError = resultText.toLowerCase().startsWith("user safety:") || 
-                              resultText.toLowerCase().startsWith("error:");
-
-        if (!isSafetyError && resultText.length > 3) {
+        if (resultText.length > 3) {
           if (!resultText.startsWith("[")) {
             resultText = `[MOOD: ${selectedMood.toUpperCase()}] ${resultText}`;
           }
@@ -85,11 +85,11 @@ Aturan Wajib Persona Cewek:
         }
       }
 
-      console.warn(`[SKIP] Model ${modelSlug} respons ditolak.`);
+      console.warn(`[SKIP] Model ${modelSlug} respons kosong.`);
     } catch (err) {
       console.error(`[ERROR] Fetch ${modelSlug}:`, err.message);
     }
   }
 
   return res.status(200).json({ display_text: '[MOOD: SANTAI] Semua AI Gratisan Istirahat Dulu' });
-}
+  }
