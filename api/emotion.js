@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   const apiKey = process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
-    return res.status(200).json({ display_text: '[MOOD: ERROR] API Key OpenRouter Belum Ada!' });
+    return res.status(200).json({ display_text: '[MOOD: ERROR] API Key Belum Dipasang!' });
   }
 
   const cuaca = req.query.cuaca || 'Cerah';
@@ -37,11 +37,12 @@ Aturan Wajib:
 7. Format wajib hasil akhir tanpa kalimat tambahan:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu.`;
 
-  // Daftar model gratis cadangan
+  // Daftar slug model gratis OpenRouter yang valid
   const freeModels = [
-    "google/gemini-2.0-flash-exp:free",
-    "deepseek/deepseek-r1:free",
-    "meta-llama/llama-3.1-8b-instruct:free"
+    "deepseek/deepseek-chat:free",
+    "google/gemini-2.0-flash-lite-preview-02-05:free",
+    "qwen/qwen-2.5-coder-32b-instruct:free",
+    "meta-llama/llama-3.2-11b-vision-instruct:free"
   ];
 
   for (const modelSlug of freeModels) {
@@ -62,18 +63,17 @@ Aturan Wajib:
 
       const data = await response.json();
 
-      if (!data.error && data.choices?.[0]?.message?.content) {
+      if (data.choices?.[0]?.message?.content) {
         const resultText = data.choices[0].message.content.trim();
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({ display_text: resultText });
       } else {
-        console.warn(`Model ${modelSlug} gagal/error:`, data.error?.message || 'No content');
+        console.warn(`[FAIL] Model ${modelSlug}:`, data.error?.message || 'Empty response');
       }
     } catch (err) {
-      console.error(`Fetch error untuk model ${modelSlug}:`, err);
+      console.error(`[ERROR] Fetch ${modelSlug}:`, err.message);
     }
   }
 
-  // Jika semua model gratis di atas gagal
-  return res.status(200).json({ display_text: '[MOOD: MINGGAT] Semua AI Gratisan Offline' });
+  return res.status(200).json({ display_text: '[MOOD: MINGGAT] AI Gratisan Off' });
 }
