@@ -34,11 +34,11 @@ Aturan Wajib:
 2. DILARANG menggunakan kata kiasan absurd/aneh, slang yang membingungkan, atau kata typo.
 3. DILARANG menggunakan tanda tanya (?) atau emoji.
 4. DILARANG sebutkan angka jam/waktu secara eksplisit.
-5. Maksimal 12–15 kata (pendek dan to the point).
+5. Maksimal 10–12 kata (pendek dan to the point).
 6. Format Wajib Hasil Akhir:
 [MOOD: ${selectedMood.toUpperCase()}] Kalimat celetukanmu`;
 
-  // Model gratisan yang stabil dan lancar Bahasa Indonesia
+  // Model gratisan terstabil untuk Bahasa Indonesia
   const freeModels = [
     "qwen/qwen-2.5-72b-instruct:free",
     "google/gemma-2-9b-it:free",
@@ -67,25 +67,30 @@ Aturan Wajib:
       if (data.choices?.[0]?.message?.content) {
         let resultText = data.choices[0].message.content.trim();
 
-        // Hapus teks status safety jika terselip
-        resultText = resultText.replace(/user safety:\s*safe/gi, '').trim();
+        // 1. Bersihkan tanda kutip ganda/tunggal di awal & akhir jika ada
+        resultText = resultText.replace(/^["']|["']$/g, '');
 
-        // Validasi: Pastikan hasil murni teks celetukan
-        if (
-          resultText.length > 8 && 
-          !resultText.toLowerCase().includes("user safety") &&
-          !resultText.toLowerCase().includes("safety:")
-        ) {
+        // 2. Cek apakah ini pesan error/metadata safety murni
+        const isSafetyError = resultText.toLowerCase().includes("user safety:") || 
+                              resultText.toLowerCase().includes("safety check");
+
+        // 3. Jika bukan error safety dan punya isi teks yang cukup
+        if (!isSafetyError && resultText.length > 3) {
+          // Jika AI lupa menyertakan format [MOOD: ...], tambahkan otomatis
+          if (!resultText.startsWith("[")) {
+            resultText = `[MOOD: ${selectedMood.toUpperCase()}] ${resultText}`;
+          }
+
           res.setHeader('Content-Type', 'application/json');
           return res.status(200).json({ display_text: resultText });
         }
       }
 
-      console.warn(`[SKIP] Model ${modelSlug} respons tidak valid.`);
+      console.warn(`[SKIP] Model ${modelSlug} respons ditolak filter.`);
     } catch (err) {
       console.error(`[ERROR] Fetch ${modelSlug}:`, err.message);
     }
   }
 
   return res.status(200).json({ display_text: '[MOOD: MINGGAT] Semua AI Gratisan Offline' });
-    }
+}
